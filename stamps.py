@@ -8,7 +8,6 @@ screen = turtle.Screen()
 screen.setup(WIDTH, HEIGHT)
 screen.title("Stamping")
 screen.bgcolor("cyan")
-screen.tracer(0)
 
 stamper = turtle.Turtle()
 stamper.shape("square")
