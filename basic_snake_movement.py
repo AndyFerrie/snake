@@ -1,8 +1,10 @@
 import turtle
+import random
 
 WIDTH = 500
 HEIGHT = 500
 DELAY = 100
+FOOD_SIZE = 20
 
 offsets = {
     "up": (0, 20),
@@ -11,46 +13,86 @@ offsets = {
     "right": (20, 0)
 }
 
-def go_up():
+def bind_direction_keys():
+    screen.onkey(lambda: set_snake_direction("up"), "Up")
+    screen.onkey(lambda: set_snake_direction("down"), "Down")
+    screen.onkey(lambda: set_snake_direction("left"), "Left")
+    screen.onkey(lambda: set_snake_direction("right"), "Right")
+    
+def set_snake_direction(direction):
     global snake_direction
-    if snake_direction != "down":
-        snake_direction = "up"
-
-def go_right():
-    global snake_direction
-    if snake_direction != "left":
-        snake_direction = "right"
-
-def go_down():
-    global snake_direction
-    if snake_direction != "up":
-        snake_direction = "down"
-
-def go_left():
-    global snake_direction
-    if snake_direction != "right":
-        snake_direction = "left"
+    if direction == "up":
+        if snake_direction != "down": # No self-collision simply by pressing wrong key
+            snake_direction = "up"
+    elif direction == "down":
+        if snake_direction != "up": # No self-collision simply by pressing wrong key
+            snake_direction = "down"
+    elif direction == "right":
+        if snake_direction != "left": # No self-collision simply by pressing wrong key
+            snake_direction = "right"
+    elif direction == "left":
+        if snake_direction != "right": # No self-collision simply by pressing wrong key
+            snake_direction = "left"
  
-def move_snake():
+def game_loop():
     stamper.clearstamps()
 
     new_head = snake[-1].copy()
     new_head[0] += offsets[snake_direction][0]
     new_head[1] += offsets[snake_direction][1]
 
+    # Check collisions
+    if new_head in snake or new_head[0] < - WIDTH / 2 or new_head[0] > WIDTH / 2 \
+        or new_head[1] < - HEIGHT / 2 or new_head[1] > HEIGHT / 2:
+        reset()
+    else: 
 
-    snake.append(new_head)
+        # Add new head to snake body
+        snake.append(new_head)
 
-    snake.pop(0)
+        # Check food collision
+        if not food_collision():
+            snake.pop(0) # Remove last segment of snake (keep the same length unless fed)
 
-    for segment in snake:
-        stamper.goto(segment[0], segment[1])
-        stamper.stamp()
+        # Draw snake for the first time
+        for segment in snake:
+            stamper.goto(segment[0], segment[1])
+            stamper.stamp()
 
-    screen.update()
+        # Refresh screen
+        screen.title(f"Snake Game. Score: {score}")
+        screen.update()
 
-    turtle.ontimer(move_snake, DELAY)
+        turtle.ontimer(game_loop, DELAY)
 
+def food_collision():
+    global food_position, score
+    if get_distance(snake[-1], food_position) < 20:
+        score += 1
+        food_position = get_random_food_position()
+        food.goto(food_position)
+        return True
+    return False
+
+def get_random_food_position():
+    x = random.randint(int(- WIDTH / 2 + FOOD_SIZE), int(WIDTH / 2 - FOOD_SIZE))
+    y = random.randint(int(- HEIGHT / 2 + FOOD_SIZE), int(HEIGHT / 2 - FOOD_SIZE))
+    return (x, y)
+
+def get_distance(pos1, pos2):
+    x1, y1 = pos1
+    x2, y2 = pos2
+    distance = ((y2-y1) ** 2 + (x2 - x1) ** 2) ** 0.5 # Pythagoras' Theorem
+    return distance
+
+def reset():
+    global score, snake, snake_direction, food_position
+    score = 0
+    snake = snake = [[0, 0], [20, 0], [40, 0], [60,0]]
+    snake_direction = "up"
+    food_position = get_random_food_position()
+    food.goto(food_position)
+    game_loop()
 
 screen = turtle.Screen()
 screen.setup(WIDTH, HEIGHT)
@@ -59,23 +101,23 @@ screen.bgcolor("pink")
 screen.tracer(0)
 
 screen.listen()
-screen.onkey(go_up, "Up")
-screen.onkey(go_right, "Right")
-screen.onkey(go_down, "Down")
-screen.onkey(go_left, "Left")
+bind_direction_keys()
 
+# Create a turtle 
 stamper = turtle.Turtle()
 stamper.shape("square")
 stamper.color()
 stamper.penup()
 
-snake = [[0, 0], [20, 0], [40, 0], [60,0]]
-snake_direction = "up"
+# Food
+food = turtle.Turtle()
+food.shape("circle")
+food.color("red")
+food.shapesize(FOOD_SIZE / 20)
+food.penup()
 
-for segment in snake:
-    stamper.goto(segment[0], segment[1])
-    stamper.stamp()
+# Start animation
+reset()
 
-move_snake()
-
+# Finish
 turtle.done()
